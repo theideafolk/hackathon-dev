@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Verified as CheckVerified } from 'lucide-react';
+import { Verified as CheckVerified, ChevronLeft, ChevronRight } from 'lucide-react';
 import ScrambledText from './ScrambledText';
 
 interface MilestoneProps {
@@ -121,6 +121,8 @@ const JourneyMap: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [isManualScrolling, setIsManualScrolling] = useState(false);
+  const [showScrollIndicators, setShowScrollIndicators] = useState(false);
   
   const milestones = [
     {
@@ -179,8 +181,12 @@ const JourneyMap: React.FC = () => {
     }
   ];
 
-  // Auto scroll tweets
+  // Auto scroll tweets with option to pause
   useEffect(() => {
+    if (isManualScrolling) {
+      return;
+    }
+    
     const interval = setInterval(() => {
       if (scrollRef.current) {
         const { scrollWidth, clientWidth } = scrollRef.current;
@@ -199,7 +205,48 @@ const JourneyMap: React.FC = () => {
     }, 30);
 
     return () => clearInterval(interval);
-  }, [scrollPosition]);
+  }, [scrollPosition, isManualScrolling]);
+  
+  // Handle manual scroll control
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      setIsManualScrolling(true);
+      const newPosition = Math.max(0, scrollPosition - 350);
+      scrollRef.current.scrollTo({
+        left: newPosition,
+        behavior: 'smooth'
+      });
+      setScrollPosition(newPosition);
+      
+      // Resume auto-scroll after a brief pause
+      setTimeout(() => setIsManualScrolling(false), 1500);
+    }
+  };
+  
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      setIsManualScrolling(true);
+      const { scrollWidth, clientWidth } = scrollRef.current;
+      const newPosition = Math.min(scrollWidth - clientWidth, scrollPosition + 350);
+      scrollRef.current.scrollTo({
+        left: newPosition,
+        behavior: 'smooth'
+      });
+      setScrollPosition(newPosition);
+      
+      // Resume auto-scroll after a brief pause
+      setTimeout(() => setIsManualScrolling(false), 1500);
+    }
+  };
+  
+  // Show scroll indicators when the mouse is over the tweets container
+  const handleMouseEnter = () => {
+    setShowScrollIndicators(true);
+  };
+  
+  const handleMouseLeave = () => {
+    setShowScrollIndicators(false);
+  };
 
   return (
     <div id="journey" className="py-10 md:py-16 px-4 bg-gradient-to-b from-black to-[#001A33]/20">
@@ -235,12 +282,41 @@ const JourneyMap: React.FC = () => {
           </div>
         </div>
         
-        {/* Twitter Posts */}
-        <div className="mt-12 md:mt-16 overflow-hidden">
+        {/* Twitter Posts with navigation controls */}
+        <div className="mt-12 md:mt-16 relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
           <h3 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">latest updates</h3>
+          
+          {/* Left scroll button */}
+          <motion.button
+            className={`absolute left-0 top-1/2 transform -translate-y-1/2 z-20 bg-black/70 text-white rounded-r-lg p-2 ${
+              showScrollIndicators ? 'opacity-70' : 'opacity-0'
+            } transition-opacity duration-300`}
+            whileHover={{ scale: 1.1, opacity: 1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={scrollLeft}
+          >
+            <ChevronLeft size={24} />
+          </motion.button>
+          
+          {/* Right scroll button */}
+          <motion.button
+            className={`absolute right-0 top-1/2 transform -translate-y-1/2 z-20 bg-black/70 text-white rounded-l-lg p-2 ${
+              showScrollIndicators ? 'opacity-70' : 'opacity-0'
+            } transition-opacity duration-300`}
+            whileHover={{ scale: 1.1, opacity: 1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={scrollRight}
+          >
+            <ChevronRight size={24} />
+          </motion.button>
+          
           <div 
             ref={scrollRef}
-            className="flex overflow-x-hidden pb-4 md:pb-6 space-x-4"
+            className="flex overflow-x-auto pb-4 md:pb-6 space-x-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#00A3FF]/20 hover:scrollbar-thumb-[#00A3FF]/40"
+            onTouchStart={() => setIsManualScrolling(true)}
+            onTouchEnd={() => setTimeout(() => setIsManualScrolling(false), 1500)}
+            onMouseDown={() => setIsManualScrolling(true)}
+            onMouseUp={() => setTimeout(() => setIsManualScrolling(false), 1500)}
           >
             {/* Add duplicate tweets at the end for continuous scrolling */}
             {[...tweets, ...tweets].map((tweet, index) => (
@@ -254,6 +330,18 @@ const JourneyMap: React.FC = () => {
               />
             ))}
           </div>
+          
+          {/* Scroll instruction indicator */}
+          <motion.div 
+            className="text-center mt-4 text-gray-400 text-xs opacity-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            transition={{ delay: 1 }}
+          >
+            <span className="inline-flex items-center">
+              <ChevronLeft size={14} className="mr-1" /> scroll to see more <ChevronRight size={14} className="ml-1" />
+            </span>
+          </motion.div>
         </div>
       </div>
     </div>
