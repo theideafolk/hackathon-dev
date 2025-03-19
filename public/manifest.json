@@ -8,14 +8,14 @@
   "theme_color": "#00A3FF",
   "icons": [
     {
-      "src": "/bolt-logo.png",
+      "src": "/bolt-x.jpg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg"
     },
     {
-      "src": "/bolt-logo.png",
+      "src": "/bolt-x.jpg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg"
     }
   ]
 }
